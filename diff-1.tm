@@ -48,13 +48,13 @@ proc esc_codes {} {
     if {[dict exists [chan configure stdout] -mode]} { ;# tty
         set reset "\033\[0m"
         set add "\x1B\[34m+ " ;# blue
-        set del "\x1B\[38;5;88m- " ;# dull red
-        set same "\x1B\[38;5;245m= " ;# gray
+        set del "\x1B\[38;5;88m- \x1B\[9m" ;# dull red with overstrike
+        set same "\x1B\[38;5;245m  " ;# gray
     } else { ;# redirected
         set reset ""
         set add "+ "
         set del "- "
-        set same "= "
+        set same "  "
     }
     return [list $reset $add $del $same]
 }
@@ -64,7 +64,8 @@ proc esc_codes {} {
 proc diff::diff_text {old_lines new_lines txt} {
     $txt delete 1.0 end
     $txt tag configure added -foreground blue
-    $txt tag configure deleted -foreground brown
+    $txt tag configure del -foreground brown
+    $txt tag configure deleted -foreground brown -overstrike true
     $txt tag configure unchanged -foreground gray67
     set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
     foreach d [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
@@ -78,12 +79,14 @@ proc diff::diff_text {old_lines new_lines txt} {
             }
             deleted {
                 foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "⌫ $line\n" deleted
+                    $txt insert end "⌫ " del
+                    $txt insert end "$line\n" deleted
                 }
             }
             changed {
                 foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "⌫ $line\n" deleted
+                    $txt insert end "⌫ " del
+                    $txt insert end "$line\n" deleted
                 }
                 foreach line [lrange $new_lines {*}$right] {
                     $txt insert end "⁁ $line\n" added
@@ -91,7 +94,7 @@ proc diff::diff_text {old_lines new_lines txt} {
             }
             unchanged {
                 foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "≡ $line\n" unchanged
+                    $txt insert end "  $line\n" unchanged
                 }
             }
         }
