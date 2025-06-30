@@ -5,7 +5,7 @@ package require struct::list 1
 namespace eval diff {}
 
 proc diff::diff {old_lines new_lines} {
-    lassign [esc_codes] action reset add del same
+    lassign [esc_codes] reset add del same
     set delta ""
     set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
     foreach d [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
@@ -40,32 +40,32 @@ proc diff::diff {old_lines new_lines} {
     return $delta
 }
 
-# bold: "\033\[1m"
-# italic: "\033\[3m"
-# underline: "\033\[4m"
+# See: https://en.wikipedia.org/wiki/ANSI_escape_code
+# bold: "\x1B\[1m"
+# italic: "\x1B\[3m"
+# underline: "\x1B\[4m"
 proc esc_codes {} {
     if {[dict exists [chan configure stdout] -mode]} { ;# tty
-        set action "\033\[37m" ;# light gray
         set reset "\033\[0m"
-        set add "${action}+${reset} \033\[34m" ;# blue
-        set del "${action}-${reset} \033\[31m" ;# red
-        set same "${action}=${reset} \033\[32m" ;# green
+        set add "\x1B\[34m+ " ;# blue
+        set del "\x1B\[38;5;88m- " ;# dull red
+        set same "\x1B\[38;5;245m= " ;# gray
     } else { ;# redirected
-        set action ""
         set reset ""
         set add "+ "
         set del "- "
         set same "= "
     }
-    return [list $action $reset $add $del $same]
+    return [list $reset $add $del $same]
 }
 
 # txt must be a tk text widget
+# See https://en.wikipedia.org/wiki/X11_color_names
 proc diff::diff_text {old_lines new_lines txt} {
     $txt delete 1.0 end
     $txt tag configure added -foreground blue
-    $txt tag configure deleted -foreground red
-    $txt tag configure unchanged -foreground green
+    $txt tag configure deleted -foreground brown
+    $txt tag configure unchanged -foreground gray67
     set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
     foreach d [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
                                                   [llength $new_lines]] {

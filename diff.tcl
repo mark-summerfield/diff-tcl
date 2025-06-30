@@ -19,12 +19,7 @@ proc cli {old new} {
 }
 
 proc gui {old new} {
-    tk scaling 1.67
-    option add *tearOff 0
-    option add *insertOffTime 0
-    ttk::style configure . -insertofftime 0
-    ttk::style theme use clam
-
+    wishinit
     tk appname "Diff Test"
     # ignore if no icon found
     catch { wm iconphoto . -default [image create photo -file \
@@ -41,6 +36,20 @@ proc gui {old new} {
     grid rowconfigure . 0 -weight 1
     bind . <Escape> exit
     bind . <q> exit
+}
+
+proc wishinit {} {
+    catch {
+        set fh [open [file join [file home] .wishinit.tcl]]
+        set raw [read $fh]
+        close $fh
+        eval $raw
+    }
+    const LINEHEIGHT [expr {[font metrics font -linespace] * 1.0125}]
+    ttk::style configure Treeview -rowheight $LINEHEIGHT
+    ttk::style configure TCheckbutton -indicatorsize \
+        [expr {$LINEHEIGHT * 0.75}]
+    set ::ICON_SIZE [expr {max(24, round(14 * [tk scaling]))}]
 }
 
 main
