@@ -1,4 +1,4 @@
-#!/usr/bin/env wish9
+#!/usr/bin/env tclsh9
 # Copyright © 2025 Mark Summerfield. All rights reserved.
 
 tcl::tm::path add [file normalize [file dirname [info script]]]
@@ -19,6 +19,7 @@ proc cli {old new} {
 }
 
 proc gui {old new} {
+    package require tk
     wishinit
     tk appname "Diff Test"
     # ignore if no icon found
