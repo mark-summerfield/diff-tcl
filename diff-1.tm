@@ -74,22 +74,22 @@ proc diff::diff_text {old_lines new_lines txt} {
         switch $action {
             added {
                 foreach line [lrange $new_lines {*}$right] {
-                    $txt insert end "⁁ $line\n" added
+                    $txt insert end "+ $line\n" added
                 }
             }
             deleted {
                 foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "⌫ " del
+                    $txt insert end "- " del
                     $txt insert end "$line\n" deleted
                 }
             }
             changed {
                 foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "⌫ " del
+                    $txt insert end "- " del
                     $txt insert end "$line\n" deleted
                 }
                 foreach line [lrange $new_lines {*}$right] {
-                    $txt insert end "⁁ $line\n" added
+                    $txt insert end "+ $line\n" added
                 }
             }
             unchanged {
