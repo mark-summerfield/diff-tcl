@@ -14,14 +14,14 @@ proc main {} {
 }
 
 proc cli {old new} {
-    set delta [diff::diff $old $new]
+    set delta [diff::colorize [diff::diff $old $new]]
     puts [join $delta "\n"]
 }
 
 proc context {} {
     set old [split [readFile tdata/f0-old] \n]
     set new [split [readFile tdata/f0-new] \n]
-    set delta [diff::diff $old $new false]
+    set delta [diff::diff $old $new]
     set fh [open tdata/f0-diff0]
     set expected [split [read -nonewline $fh] \n]
     close $fh
@@ -32,7 +32,7 @@ proc context {} {
     } else {
         puts "OK f0 0 context diff"
     }
-    set delta [diff::contextualize [diff::diff $old $new false]]
+    set delta [diff::contextualize [diff::diff $old $new]]
     set fh [open tdata/f0-diff3]
     set expected [split [read -nonewline $fh] \n]
     close $fh
@@ -56,7 +56,7 @@ proc gui {old new} {
         -yscrollcommand ".yscrollbar set" -xscrollcommand ".xscrollbar set"
     ttk::scrollbar .yscrollbar -orient vertical -command ".txt yview"
     ttk::scrollbar .xscrollbar -orient horizontal -command ".txt xview"
-    set delta [diff::diff $old $new false]
+    set delta [diff::diff $old $new]
     diff::diff_text $delta .txt
     grid .txt -column 0 -row 0 -sticky news
     grid .xscrollbar -column 0 -row 1 -sticky we

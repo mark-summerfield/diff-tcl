@@ -5,12 +5,7 @@ package require struct::list 1
 namespace eval diff {}
 
 # Returns list of lines
-proc diff::diff {old_lines new_lines {color true}} {
-    if {$color} {
-        lassign [esc_codes] reset add del same
-    } else {
-        lassign {"" "+ " "- " "  "} reset add del same
-    }
+proc diff::diff {old_lines new_lines} {
     set delta [list]
     set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
     foreach d [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
@@ -19,30 +14,45 @@ proc diff::diff {old_lines new_lines {color true}} {
         switch $action {
             added {
                 foreach line [lrange $new_lines {*}$right] {
-                    lappend delta "${add}${line}${reset}"
+                    lappend delta "+ $line"
                 }
             }
             deleted {
                 foreach line [lrange $old_lines {*}$left] {
-                    lappend delta "${del}${line}${reset}"
+                    lappend delta "- $line"
                 }
             }
             changed {
                 foreach line [lrange $old_lines {*}$left] {
-                    lappend delta "${del}${line}${reset}"
+                    lappend delta "- $line"
                 }
                 foreach line [lrange $new_lines {*}$right] {
-                    lappend delta "${add}${line}${reset}"
+                    lappend delta "+ $line"
                 }
             }
             unchanged {
                 foreach line [lrange $old_lines {*}$left] {
-                    lappend delta "${same}${line}${reset}"
+                    lappend delta "  $line"
                 }
             }
         }
     }                                              
     return $delta
+}
+
+proc diff::colorize delta {
+    lassign [esc_codes] reset add del same
+    set color_delta [list]
+    foreach line $delta {
+        set action [string index $line 0]
+        set line [string range $line 2 end]
+        switch $action {
+            "+" { lappend color_delta "${add}${line}${reset}" }
+            "-" { lappend color_delta "${del}${line}${reset}" }
+            " " { lappend color_delta "${same}${line}${reset}" }
+        }
+    }
+    return $color_delta
 }
 
 # See: https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -86,7 +96,7 @@ proc diff::diff_text {delta txt} {
     $txt see 1.0
 }
 
-# Returns list of lines; delta must be created with [diff old new false]
+# Returns list of lines
 proc diff::contextualize delta {
     set result [list]
     set i 0
