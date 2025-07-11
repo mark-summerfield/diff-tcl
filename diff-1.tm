@@ -99,7 +99,7 @@ proc diff::diff_text {delta txt} {
                 $txt insert end [string range $line 2 end]\n deleted
                 }
             " " { $txt insert end $line\n unchanged }
-            "%" { $txt insert end [string repeat " " 40]\n ellipsis }
+            "%" { $txt insert "≣ [string repeat ┈ 40]" ellipsis }
         }
     }
     $txt see 1.0
