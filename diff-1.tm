@@ -40,8 +40,9 @@ proc diff::diff {old_lines new_lines} {
     return $delta
 }
 
+# % only occurs if contextualize-d
 proc diff::colorize delta {
-    lassign [esc_codes] reset add del same
+    lassign [esc_codes] reset add del same ellipsis
     set color_delta [list]
     foreach line $delta {
         set action [string index $line 0]
@@ -50,6 +51,9 @@ proc diff::colorize delta {
             "+" { lappend color_delta "${add}${line}${reset}" }
             "-" { lappend color_delta "${del}${line}${reset}" }
             " " { lappend color_delta "${same}${line}${reset}" }
+            "%" { lappend color_delta \
+                    "${ellipsis}[string repeat " " 40]${reset}"
+                }
         }
     }
     return $color_delta
@@ -65,23 +69,27 @@ proc diff::esc_codes {} {
         set add "\x1B\[34m+ " ;# blue
         set del "\x1B\[38;5;88m- \x1B\[9m" ;# dull red with overstrike
         set same "\x1B\[38;5;245m  " ;# gray
+        set ellipsis "\x1B\[46m" ;# teal
     } else { ;# redirected
         set reset ""
         set add "+ "
         set del "- "
         set same "  "
+        set ellipsis ""
     }
-    return [list $reset $add $del $same]
+    return [list $reset $add $del $same $ellipsis]
 }
 
 # txt must be a tk text widget
 # See https://en.wikipedia.org/wiki/X11_color_names
+# % only occurs if contextualize-d
 proc diff::diff_text {delta txt} {
     $txt delete 1.0 end
     $txt tag configure added -foreground blue
     $txt tag configure del -foreground brown
     $txt tag configure deleted -foreground brown -overstrike true
     $txt tag configure unchanged -foreground gray67
+    $txt tag configure ellipsis -background teal
     foreach line $delta {
         set action [string index $line 0]
         switch $action {
@@ -91,6 +99,7 @@ proc diff::diff_text {delta txt} {
                 $txt insert end [string range $line 2 end]\n deleted
                 }
             " " { $txt insert end $line\n unchanged }
+            "%" { $txt insert end [string repeat " " 40]\n ellipsis }
         }
     }
     $txt see 1.0
