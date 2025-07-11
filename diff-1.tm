@@ -52,7 +52,7 @@ proc diff::colorize delta {
             "-" { lappend color_delta "${del}${line}${reset}" }
             " " { lappend color_delta "${same}${line}${reset}" }
             "%" { lappend color_delta \
-                    "${ellipsis}[string repeat " " 40]${reset}"
+                    "${ellipsis}≣ [string repeat ┈ 60]${reset}"
                 }
         }
     }
@@ -69,7 +69,7 @@ proc diff::esc_codes {} {
         set add "\x1B\[34m+ " ;# blue
         set del "\x1B\[38;5;88m- \x1B\[9m" ;# dull red with overstrike
         set same "\x1B\[38;5;245m  " ;# gray
-        set ellipsis "\x1B\[46m" ;# teal
+        set ellipsis "\x1B\[36m" ;# teal
     } else { ;# redirected
         set reset ""
         set add "+ "
