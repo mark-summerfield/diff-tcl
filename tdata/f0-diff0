@@ -1,0 +1,112 @@
+  # Copyright © 2025 Mark Summerfield. All rights reserved.
+  
+  package require filedata
+- package require filesize
+  package require lambda 1
+  package require misc
+  package require sqlite3 3
+  
+  oo::class create Store {
+      variable Filename
+      variable Db
+      variable Reporter
+  }
+  
+  # creates database if it doesn't exist; sets reporter to ignore messages
+  # unless the caller overrides
+  oo::define Store constructor {filename {reporter ""}} {
+      set Filename $filename
+      set Reporter [expr {$reporter eq "" ? [lambda {message} {}] \
+                                          : $reporter}]
+      set Db [self]#DB
+      set exists [file isfile $Filename]
+      sqlite3 $Db $Filename
+      $Db eval [readFile $::APPPATH/sql/prepare.sql] 
+      if {!$exists} {
+          $Db transaction {
+              $Db eval [readFile $::APPPATH/sql/create.sql] 
+              $Db eval [readFile $::APPPATH/sql/insert.sql] 
+          }
+      }
+  }
+  
+  oo::define Store destructor { my close }
+  
+  oo::define Store method close {} {
+      if {![my is_closed]} {
++         $Db eval {VACUUM;}
+          $Db close
+          set Db {}
+      }
+  }
+  
+  oo::define Store method is_closed {} { catch {$Db version} }
+  
+  oo::define Store method filename {} { return $Filename }
+  
+- oo::define Store method last_generation {} {
+-     $Db eval {SELECT gid FROM LastGeneration}
++ oo::define Store method current_generation {} {
++     $Db eval {SELECT gid FROM CurrentGeneration}
+  }
+  
+  # creates new generation with 'U' or 'Z' or 'S' for every given file and
+  # returns the number of files added.
+  # Note that ignores should be handled by the application itself.
+  oo::define Store method add {args} {
+      set filenames [lsort -nocase \
+          [lsort -unique [list {*}[my filenames] {*}$args]]]
+-     lassign [misc::n_s [llength $filenames]] n s
+-     {*}$Reporter "adding/updating $n file$s"
+-     my Update "adding/updating $n file$s" true {*}$filenames
++     {*}$Reporter "adding/updating"
++     my Update "adding/updating" {*}$filenames
+  }
+  
+  # if at least one prev generation exists, creates new generation with
+- # 'U' or 'Z' or 'S' for every file present in the _last_ generation that
++ # 'U' or 'Z' or 'S' for every file present in the current generation that
+  # hasn't been deleted and returns the number updated (which could be 0);
+  # must only be used after at least one call to add
+  oo::define Store method update {message} {
+-     set gid [my last_generation]
+-     if {!$gid} { error "can only update an existing non-empty store" }
++     set gid [my current_generation]
++     if {!$gid} { error "can only update an existing nonempty store" }
+      if {$message ne ""} { {*}$Reporter "updating \"$message\"" }
+-     my Update $message false {*}[my filenames $gid]
++     my Update $message {*}[my filenames $gid]
+  }
+  
+  # creates new generation with 'U' or 'Z' or 'S' for every given file —
+  # providing it still exists
+- oo::define Store method Update {message adding args} {
++ oo::define Store method Update {message args} {
+      set filenames [list]
+      foreach filename $args {
+          if {[file isfile $filename]} {
+              lappend filenames $filename
++         } elseif {[my find_gid_for_untracked $filename]} {
++             {*}$Reporter "skipped untracked file \"$filename\""
+          } else {
+-             {*}$Reporter "skipped missing or non-file \"$filename\""
++             {*}$Reporter "skipped missing or nonfile \"$filename\""
+          }
+      }
+      if {![llength $filenames]} {
+          {*}$Reporter "no files to update"
+          return 0
+      }
+      $Db transaction {
+          $Db eval {INSERT INTO Generations (message) VALUES (:message)}
+          set gid [$Db last_insert_rowid]
+          {*}$Reporter "created @$gid"
+          set n 0
+          foreach filename [lsort -nocase $filenames] {
+-             incr n [my UpdateOne $adding $gid $filename]
++             incr n [my UpdateOne $gid $filename]
+          }
+      }
+      return $n
+  }
+  

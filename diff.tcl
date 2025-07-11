@@ -9,13 +9,40 @@ proc main {} {
     const OLD [list the quick brown fox jumped over the lazy dogs]
     const NEW [list the quick red fox hopped over the dogs today]
     cli $OLD $NEW
+    context
     gui $OLD $NEW
-
 }
 
 proc cli {old new} {
     set delta [diff::diff $old $new]
-    puts -nonewline $delta
+    puts [join $delta "\n"]
+}
+
+proc context {} {
+    set old [split [readFile tdata/f0-old] \n]
+    set new [split [readFile tdata/f0-new] \n]
+    set delta [diff::diff $old $new false]
+    set fh [open tdata/f0-diff0]
+    set expected [split [read -nonewline $fh] \n]
+    close $fh
+    if {$delta ne $expected} {
+        writeFile /tmp/act0 [join $delta "\n"]
+        writeFile /tmp/exp0 [join $expected "\n"]
+        puts "FAIL f0 0 context diff; diff /tmp/act0 /tmp/exp0"
+    } else {
+        puts "OK f0 0 context diff"
+    }
+    set delta [diff::contextualize [diff::diff $old $new false]]
+    set fh [open tdata/f0-diff3]
+    set expected [split [read -nonewline $fh] \n]
+    close $fh
+    if {$delta ne $expected} {
+        writeFile /tmp/act3 [join $delta "\n"]
+        writeFile /tmp/exp3 [join $expected "\n"]
+        puts "FAIL f0 3 context diff; diff /tmp/act3 /tmp/exp3"
+    } else {
+        puts "OK f0 3 context diff"
+    }
 }
 
 proc gui {old new} {
@@ -29,7 +56,8 @@ proc gui {old new} {
         -yscrollcommand ".yscrollbar set" -xscrollcommand ".xscrollbar set"
     ttk::scrollbar .yscrollbar -orient vertical -command ".txt yview"
     ttk::scrollbar .xscrollbar -orient horizontal -command ".txt xview"
-    set delta [diff::diff_text $old $new .txt]
+    set delta [diff::diff $old $new false]
+    diff::diff_text $delta .txt
     grid .txt -column 0 -row 0 -sticky news
     grid .xscrollbar -column 0 -row 1 -sticky we
     grid .yscrollbar -column 1 -row 0 -sticky ns

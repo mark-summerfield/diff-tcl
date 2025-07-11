@@ -4,9 +4,14 @@ package require struct::list 1
 
 namespace eval diff {}
 
-proc diff::diff {old_lines new_lines} {
-    lassign [esc_codes] reset add del same
-    set delta ""
+# Returns list of lines
+proc diff::diff {old_lines new_lines {color true}} {
+    if {$color} {
+        lassign [esc_codes] reset add del same
+    } else {
+        lassign {"" "+ " "- " "  "} reset add del same
+    }
+    set delta [list]
     set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
     foreach d [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
                                                   [llength $new_lines]] {
@@ -14,25 +19,25 @@ proc diff::diff {old_lines new_lines} {
         switch $action {
             added {
                 foreach line [lrange $new_lines {*}$right] {
-                    set delta [string cat $delta "${add}${line}${reset}\n"]
+                    lappend delta "${add}${line}${reset}"
                 }
             }
             deleted {
                 foreach line [lrange $old_lines {*}$left] {
-                    set delta [string cat $delta "${del}${line}${reset}\n"]
+                    lappend delta "${del}${line}${reset}"
                 }
             }
             changed {
                 foreach line [lrange $old_lines {*}$left] {
-                    set delta [string cat $delta "${del}${line}${reset}\n"]
+                    lappend delta "${del}${line}${reset}"
                 }
                 foreach line [lrange $new_lines {*}$right] {
-                    set delta [string cat $delta "${add}${line}${reset}\n"]
+                    lappend delta "${add}${line}${reset}"
                 }
             }
             unchanged {
                 foreach line [lrange $old_lines {*}$left] {
-                    set delta [string cat $delta "${same}${line}${reset}\n"]
+                    lappend delta "${same}${line}${reset}"
                 }
             }
         }
@@ -44,7 +49,7 @@ proc diff::diff {old_lines new_lines} {
 # bold: "\x1B\[1m"
 # italic: "\x1B\[3m"
 # underline: "\x1B\[4m"
-proc esc_codes {} {
+proc diff::esc_codes {} {
     if {[dict exists [chan configure stdout] -mode]} { ;# tty
         set reset "\033\[0m"
         set add "\x1B\[34m+ " ;# blue
@@ -61,43 +66,62 @@ proc esc_codes {} {
 
 # txt must be a tk text widget
 # See https://en.wikipedia.org/wiki/X11_color_names
-proc diff::diff_text {old_lines new_lines txt} {
+proc diff::diff_text {delta txt} {
     $txt delete 1.0 end
     $txt tag configure added -foreground blue
     $txt tag configure del -foreground brown
     $txt tag configure deleted -foreground brown -overstrike true
     $txt tag configure unchanged -foreground gray67
-    set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
-    foreach d [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
-                                                  [llength $new_lines]] {
-        lassign $d action left right
+    foreach line $delta {
+        set action [string index $line 0]
         switch $action {
-            added {
-                foreach line [lrange $new_lines {*}$right] {
-                    $txt insert end "+ $line\n" added
+            "+" { $txt insert end $line\n added }
+            "-" {
+                $txt insert end "- " del
+                $txt insert end [string range $line 2 end]\n deleted
                 }
-            }
-            deleted {
-                foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "- " del
-                    $txt insert end "$line\n" deleted
-                }
-            }
-            changed {
-                foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "- " del
-                    $txt insert end "$line\n" deleted
-                }
-                foreach line [lrange $new_lines {*}$right] {
-                    $txt insert end "+ $line\n" added
-                }
-            }
-            unchanged {
-                foreach line [lrange $old_lines {*}$left] {
-                    $txt insert end "  $line\n" unchanged
-                }
-            }
+            " " { $txt insert end $line\n unchanged }
         }
-    }                                              
+    }
     $txt see 1.0
+}
+
+# Returns list of lines; delta must be created with [diff old new false]
+proc diff::contextualize delta {
+    set result [list]
+    set i 0
+    while {$i < [llength $delta]} {
+        set line [lindex $delta $i]
+        set action [string index $line 0]
+        switch $action {
+            "-" -
+            "+" { lappend result $line }
+            " " {
+                    set first $i
+                    set last [incr i]
+                    while {$last < [llength $delta]} {
+                        set line [lindex $delta $last]
+                        set action [string index $line 0]
+                        if {$action ne " "} {
+                            incr last -1
+                            break
+                        }
+                        incr last
+                    }
+                    set d [expr {$last - $first}]
+                    if {$d > 4} {
+                        set j [expr {$first + 2}]
+                        lappend result {*}[lrange $delta $first $j]
+                        set j [expr {$last - 2}]
+                        lappend result [string repeat % 40]
+                        lappend result {*}[lrange $delta $j $last]
+                    } else {
+                        lappend result {*}[lrange $delta $first $last]
+                    }
+                    set i $last
+                }
+        }
+        incr i
+    }
+    return $result
 }
