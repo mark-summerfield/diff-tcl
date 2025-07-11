@@ -132,7 +132,7 @@ proc diff::contextualize delta {
                         set j [expr {$first + 2}]
                         lappend result {*}[lrange $delta $first $j]
                         set j [expr {$last - 2}]
-                        lappend result [string repeat % 40]
+                        lappend result %%%%%
                         lappend result {*}[lrange $delta $j $last]
                     } else {
                         lappend result {*}[lrange $delta $first $last]

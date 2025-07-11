@@ -5,7 +5,7 @@
   package require lambda 1
   package require misc
   package require sqlite3 3
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%
   
   oo::define Store method close {} {
       if {![my is_closed]} {
@@ -13,7 +13,7 @@
           $Db close
           set Db {}
       }
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%
   
   oo::define Store method filename {} { return $Filename }
   
@@ -24,7 +24,7 @@
   }
   
   # creates new generation with 'U' or 'Z' or 'S' for every given file and
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%
   oo::define Store method add {args} {
       set filenames [lsort -nocase \
           [lsort -unique [list {*}[my filenames] {*}$args]]]
@@ -66,7 +66,7 @@
           }
       }
       if {![llength $filenames]} {
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%
           {*}$Reporter "created @$gid"
           set n 0
           foreach filename [lsort -nocase $filenames] {
@@ -75,6 +75,6 @@
           }
       }
       return $n
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%
   }
   
