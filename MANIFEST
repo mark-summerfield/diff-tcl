@@ -1,6 +1,21 @@
-diff.tcl
+tdiff.tcl
 diff-1.tm
 
 st.sh
+
+# TODO
+# implement:
+#   diff::edits {old_lines new_lines} → edits
+#   diff::patch {old_lines edits} → new_lines
+#
+# essentially edits is similar to diff but instead of copying all the
+# text output one of these per line (or nothing for unchanged)
+#   + lino text of line to insert
+#   - lino
+# so to do a patch, set pos to 0 and read edits:
+#   if + then copy lines from pos to lino-1;
+#	then copy text of edit line and incr pos
+#   if - then copy lines from pos to lino-1 and set pos to lino
+#   at end copy lines from pos to end
 
 # vim: syn=yaml
