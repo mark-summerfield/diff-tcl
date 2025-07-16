@@ -17,5 +17,17 @@ st.sh
 #	then copy text of edit line and incr pos
 #   if - then copy lines from pos to lino-1 and set pos to lino
 #   at end copy lines from pos to end
+#
+# Will need examples:
+#
+#   =	+   +	-   -
+#   :	:   :	:   :
+#   ±	±   ±	±   ±
+#   :	:   :	:   :
+#   ±	±   ±	±   ±
+#   :	:   :	:   :
+#   ±	±   ±	±   ±
+#   :	:   :	:   :
+#   =	+   -	+   -
 
 # vim: syn=yaml
