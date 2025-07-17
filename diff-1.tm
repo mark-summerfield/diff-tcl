@@ -8,9 +8,9 @@ namespace eval diff {}
 proc diff::diff {old_lines new_lines} {
     set delta [list]
     set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
-    foreach d [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
-                                                  [llength $new_lines]] {
-        lassign $d action left right
+    foreach diff [::struct::list lcsInvertMerge $lcs [llength $old_lines] \
+                                                     [llength $new_lines]] {
+        lassign $diff action left right
         switch $action {
             added {
                 foreach line [lrange $new_lines {*}$right] {
@@ -38,6 +38,61 @@ proc diff::diff {old_lines new_lines} {
         }
     }                                              
     return $delta
+}
+
+# Returns list of edits
+proc diff::edits {old_lines new_lines} {
+    set edits [list]
+    set lcs [::struct::list longestCommonSubsequence $old_lines $new_lines]
+    foreach diff [::struct::list lcsInvert $lcs [llength $old_lines] \
+                                                [llength $new_lines]] {
+        lassign $diff action left right
+        switch $action {
+            added {
+                foreach line [lrange $new_lines {*}$right] {
+                    lappend edits "+ $left $line"
+                }
+            }
+            deleted {
+                foreach line [lrange $old_lines {*}$left] {
+                    lappend edits "- $left"
+                }
+            }
+            changed {
+                foreach line [lrange $old_lines {*}$left] {
+                    lappend edits "- $left"
+                }
+                foreach line [lrange $new_lines {*}$right] {
+                    lappend edits "+ $left $line"
+                }
+            }
+        }
+    }                                              
+    return $edits
+}
+
+proc diff::patch {old_lines edits} {
+    set new_lines [list]
+    set old_pos 0
+    foreach edit $edits {
+        if {$edit eq ""} { continue }
+        if {[scan $edit "%s %d %d%n" action index1 index2 i] > 0} {
+            if {$old_pos < $index1} {
+                lappend new_lines {*}[lrange $old_lines $old_pos $index1]
+                set old_pos $index1
+            }
+            switch $action {
+                "+" { lappend new_lines [string range $edit [incr i] end] }
+                "-" { set old_pos $index2 }
+            }
+        } else {
+            error "invalid patch edits line: '$edit'"
+        }
+    }
+    if {$old_pos < [llength $old_lines]} {
+        lappend new_lines {*}[lrange $old_lines $old_pos end]
+    }
+    return $new_lines
 }
 
 # % only occurs if contextualize-d

@@ -1,0 +1,27 @@
+- 3 3
++ 35 36         $Db eval {VACUUM;}
+- 45 46
+- 45 46
++ 45 46 oo::define Store method current_generation {} {
++ 45 46     $Db eval {SELECT gid FROM CurrentGeneration}
+- 55 57
+- 55 57
+- 55 57
++ 55 57     {*}$Reporter "adding/updating"
++ 55 57     my Update "adding/updating" {*}$filenames
+- 61 61
++ 61 61 # 'U' or 'Z' or 'S' for every file present in the current generation that
+- 65 66
+- 65 66
++ 65 66     set gid [my current_generation]
++ 65 66     if {!$gid} { error "can only update an existing nonempty store" }
+- 68 68
++ 68 68     my Update $message {*}[my filenames $gid]
+- 73 73
++ 73 73 oo::define Store method Update {message args} {
++ 77 78         } elseif {[my find_gid_for_untracked $filename]} {
++ 77 78             {*}$Reporter "skipped untracked file \"$filename\""
+- 79 79
++ 79 79             {*}$Reporter "skipped missing or nonfile \"$filename\""
+- 92 92
++ 92 92             incr n [my UpdateOne $gid $filename]
