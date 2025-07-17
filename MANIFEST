@@ -1,3 +1,15 @@
+# TODO create much smaller egs to test edits/patch
+# based on quick brown etc.
+#   = ... = 
+#   = ... + 
+#   = ... - 
+#   + ... = 
+#   - ... = 
+#   + ... + 
+#   + ... - 
+#   - ... + 
+#   - ... - 
+
 diff.tcl
 diff-1.tm
 tdiff.tcl
