@@ -6,11 +6,52 @@ tcl::tm::path add [file normalize [file dirname [info script]]]
 package require diff
 
 proc main {} {
-    const OLD [list the quick brown fox jumped over the lazy dogs]
-    const NEW [list the quick red fox hopped over the dogs today]
-    cli $OLD $NEW
-    context
-    gui $OLD $NEW
+    diff_patch
+    # TODO reinstate
+    #   const OLD [list the quick brown fox jumped over the lazy dogs]
+    #   const NEW [list the quick red fox hopped over the dogs today]
+    #   cli $OLD $NEW
+    #   context
+    #   gui $OLD $NEW
+}
+
+proc diff_patch {} {
+    const FX_OLD [list the quick brown fox jumped over the lazy dogs]
+    const FX_NEW [list the quick red fox hopped over the dogs today]
+    _diff_patch FX_OLD $FX_OLD $FX_NEW
+
+    const EE_OLD [list alpha pi xi gamma delta zeta theta \
+                    kappa rho tau lambda omicron nu]
+    const EP_OLD [list alpha epsilon rho sigma phi zeta eta chi iota \
+                    kappa psi mu nu psi omega]
+    const EM_OLD [list alpha delta omicron sigma epsilon pi zeta eta rho \
+                    kappa]
+    const PE_OLD [list gamma delta sigma theta iota rho \
+                    xi omicron mu nu]
+    const ME_OLD [list beta gamma xi epsilon omicron eta upsilon phi iota \
+                    lambda chi nu]
+    const PP_OLD [list gamma delta xi pi epsilon omicron eta rho \
+                    kappa tau upsilon]
+    const PM_OLD [list delta epsilon zeta eta iota \
+                    kappa lambda mu nu phi chi psi]
+    const MP_OLD [list gamma delta epsilon zeta eta theta iota \
+                    kappa lambda mu nu omega xi tau]
+    const MM_OLD [list beta gamma chi pi delta zeta omicron iota \
+                    kappa]
+    const NEW [list alpha beta gamma delta epsilon zeta eta theta iota \
+                kappa lambda mu nu]
+
+    # TODO all the above
+    #_diff_patch EE_OLD $EE_OLD $NEW
+}
+
+proc _diff_patch {name old_lines new_lines} {
+    puts "$name:   $old_lines"
+    set edits [diff::edits $old_lines $new_lines]
+    puts "edits: $edits"
+    set actual [diff::patch $old_lines $edits]
+    puts "expected: $new_lines"
+    puts "actual:   $actual [expr {$actual eq $new_lines ? "OK" : "FAIL"}]"
 }
 
 proc cli {old new} {
