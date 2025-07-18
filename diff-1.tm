@@ -71,28 +71,26 @@ proc diff::edits {old_lines new_lines} {
     return $edits
 }
 
-proc diff::patch {old_lines edits} {
-    set new_lines [list]
-    set old_pos 0
+proc diff::patch {lines edits} {
     foreach edit $edits {
         if {$edit eq ""} { continue }
         if {[scan $edit "%s %d %d%n" action index1 index2 i] > 0} {
-            if {$old_pos < $index1} {
-                lappend new_lines {*}[lrange $old_lines $old_pos $index1]
-                set old_pos $index1
-            }
             switch $action {
-                "+" { lappend new_lines [string range $edit [incr i] end] }
-                "-" { set old_pos $index2 }
+                "+" {
+                    set line [string range $edit [incr i] end]
+                    if {$index1 == $index2} {
+                        set lines [linsert $lines $index1 $line]
+                    } else {
+                        set lines [lreplace $lines $index1 $index2 $line]
+                    }
+                }
+                "-" { set lines [lreplace $lines $index1 $index2] }
             }
         } else {
             error "invalid patch edits line: '$edit'"
         }
     }
-    if {$old_pos < [llength $old_lines]} {
-        lappend new_lines {*}[lrange $old_lines $old_pos end]
-    }
-    return $new_lines
+    return $lines
 }
 
 # % only occurs if contextualize-d

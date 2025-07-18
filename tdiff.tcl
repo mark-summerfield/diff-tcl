@@ -42,16 +42,27 @@ proc diff_patch {} {
                 kappa lambda mu nu]
 
     # TODO all the above
-    #_diff_patch EE_OLD $EE_OLD $NEW
+    _diff_patch EE_OLD $EE_OLD $NEW
 }
 
 proc _diff_patch {name old_lines new_lines} {
-    puts "$name:   $old_lines"
+    puts "\n$name:   [indexed_list $old_lines]"
     set edits [diff::edits $old_lines $new_lines]
     puts "edits: $edits"
     set actual [diff::patch $old_lines $edits]
-    puts "expected: $new_lines"
-    puts "actual:   $actual [expr {$actual eq $new_lines ? "OK" : "FAIL"}]"
+    puts "expected: [indexed_list $new_lines]"
+    puts "actual:   [indexed_list $actual]\
+        [expr {$actual eq $new_lines ? "OK" : "FAIL"}]"
+}
+
+proc indexed_list lst {
+    set result [list]
+    set i 0
+    foreach x $lst {
+        lappend result "$i:$x"
+        incr i
+    }
+    join $result " "
 }
 
 proc cli {old new} {
